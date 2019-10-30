@@ -1,4 +1,18 @@
-import {AmbientLight, Color, DirectionalLight, Object3D, PerspectiveCamera, Scene, WebGLRenderer} from 'three';
+import {TweenLite} from 'gsap/TweenLite';
+import {
+	AmbientLight, BoxHelper, CameraHelper,
+	Color,
+	DirectionalLight, DirectionalLightShadow, Mesh, MeshPhongMaterial,
+	Object3D,
+	PerspectiveCamera, PlaneBufferGeometry,
+	Scene,
+	ShadowMaterial, TorusBufferGeometry,
+	Vector3,
+	WebGLRenderer,
+	Math as TMath, Group,
+} from 'three';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
+import {TransformControls} from 'three/examples/jsm/controls/TransformControls';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {GUI} from 'dat.gui';
 
@@ -16,12 +30,28 @@ async function init() {
 		alpha: true,
 		powerPreference: 'high-performance',
 	});
+	renderer.shadowMap.enabled = true;
 	document.body.appendChild(renderer.domElement);
 
 	const scene = new Scene();
-	const camera = new PerspectiveCamera(45, 2, 0.1, 10);
-	camera.position.set(0, 0, 7);
+	const camera = new PerspectiveCamera(45, 2, 0.1, 40);
+	camera.position.set(3, 3, 7);
+	camera.lookAt(new Vector3(0, 1, 0));
 	renderer.setAnimationLoop(render);
+
+	const controls = new OrbitControls(camera, renderer.domElement);
+	controls.maxPolarAngle = TMath.degToRad(78);
+	controls.minPolarAngle = TMath.degToRad(45);
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.05;
+
+	const transformControls = new TransformControls(camera, renderer.domElement);
+	transformControls.addEventListener('dragging-changed', e => controls.enabled = !e.value);
+	transformControls.mode = 'rotate';
+	transformControls.showX = false;
+	transformControls.showZ = false;
+	transformControls.size = 2;
+	scene.add(transformControls);
 
 	{
 		const color = new Color('#ffffff');
@@ -33,7 +63,24 @@ async function init() {
 		const color = new Color('#ffffff');
 		const light = new DirectionalLight(color, 0.4);
 		light.position.set(-30, 50, -20);
+		light.castShadow = true;
+		light.shadow = new DirectionalLightShadow(new PerspectiveCamera(70, 1, 1, 20));
+		light.shadow.bias = -0.000222;
+		light.shadow.mapSize.width = 1024;
+		light.shadow.mapSize.height = 1024;
 		scene.add(light);
+
+		const tweenFish = () => {
+			TweenLite.to(light.position,  1 + Math.random() * 2, {
+				x: -30 + Math.random() * 60,
+				z: -20 + Math.random() * 40,
+				onComplete() {
+					TweenLite.delayedCall(2, tweenFish);
+				},
+			});
+		};
+
+		tweenFish();
 	}
 
 	{
@@ -41,6 +88,15 @@ async function init() {
 		const light = new DirectionalLight(color, 0.3);
 		light.position.set(0, -30, 20);
 		scene.add(light);
+	}
+
+	{
+		const geometry = new PlaneBufferGeometry(10, 10, 1, 1);
+		geometry.rotateX(-Math.PI * 0.5);
+		const material = new ShadowMaterial({opacity: 0.2});
+		const mesh = new Mesh(geometry, material);
+		mesh.receiveShadow = true;
+		scene.add(mesh);
 	}
 
 	{
@@ -68,14 +124,25 @@ async function init() {
 			const loadedScene = await loadModel(index);
 			const pivot = new Object3D();
 			pivot.name = list[index];
-			pivot.add(...loadedScene.scene.children);
+			pivot.castShadow = true;
+			pivot.translateY(1);
 
 			const existentModel = scene.getObjectByName(list[selectedIndex]);
 			if (typeof existentModel !== 'undefined') {
+				transformControls.detach();
 				scene.remove(existentModel);
 			}
 
+			loadedScene.scene.traverse(child => {
+				if (child instanceof Mesh) {
+					child.castShadow = true;
+				}
+			});
+
+			pivot.add(...loadedScene.scene.children);
+
 			scene.add(pivot);
+			transformControls.attach(pivot);
 			selectedIndex = index;
 		}
 
@@ -93,6 +160,7 @@ async function init() {
 			camera.updateProjectionMatrix();
 		}
 
+		controls.update();
 		renderer.render(scene, camera);
 	}
 

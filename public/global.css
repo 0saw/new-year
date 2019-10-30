@@ -6,6 +6,8 @@ body {
 
 body {
 	overflow: hidden;
+	background: center center no-repeat url(/images/office.png);
+	background-size: cover;
 }
 
 canvas {
