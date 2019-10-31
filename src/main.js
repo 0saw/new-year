@@ -30,6 +30,7 @@ async function init() {
 		alpha: true,
 		powerPreference: 'high-performance',
 	});
+	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.shadowMap.enabled = true;
 	document.body.appendChild(renderer.domElement);
 
