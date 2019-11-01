@@ -1,39 +1,21 @@
 import {TweenLite} from 'gsap/TweenLite';
 import {
-	AmbientLight,
-	BoxHelper,
-	CameraHelper,
+	AmbientLight, BoxHelper, CameraHelper,
 	Color,
-	DirectionalLight,
-	DirectionalLightShadow,
-	Mesh,
-	MeshPhongMaterial,
-	MeshNormalMaterial,
+	DirectionalLight, DirectionalLightShadow, Mesh, MeshPhongMaterial, MeshNormalMaterial,
 	Object3D,
-	PerspectiveCamera, OrthographicCamera,
-	PlaneBufferGeometry,
+	PerspectiveCamera, PlaneBufferGeometry,
 	Scene,
-	ShadowMaterial,
-	TorusBufferGeometry,
+	ShadowMaterial, TorusBufferGeometry,
 	Vector3,
 	WebGLRenderer,
-	Math as TMath,
-	Group,
-	TorusKnotGeometry,
-	DoubleSide,
-	BoxBufferGeometry,
-	Camera,
-	Clock,
-	TorusKnotBufferGeometry,
-	PCFSoftShadowMap, PlaneGeometry,
+	Math as TMath, Group, TorusKnotGeometry, DoubleSide, BoxBufferGeometry, Camera, Clock,
 } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import {TransformControls} from 'three/examples/jsm/controls/TransformControls';
-import {TeapotBufferGeometry} from 'three/examples/jsm/geometries/TeapotBufferGeometry';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {initialize, PatternMarker, Source} from 'threear';
 import {GUI} from 'dat.gui';
-
 
 const GUITranslations = {
 	selectModel: 'Выберите модель: ',
@@ -41,76 +23,46 @@ const GUITranslations = {
 
 init();
 async function init() {
-	// Initialization of context
 	const gui = new GUI({
 		width: 320
 	});
-
+	const clock = new Clock();
 	const renderer = new WebGLRenderer({
-		alpha: true,
 		antialias: true,
+		alpha: true,
+		powerPreference: 'high-performance',
 	});
-	renderer.shadowMap.enabled = true;
-	// renderer.shadowMap.type = PCFSoftShadowMap;
-
-	renderer.setClearColor(new Color('lightgrey'), 0);
 	renderer.setPixelRatio(window.devicePixelRatio);
-	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.shadowMap.enabled = true;
+
+	renderer.domElement.style.position = 'absolute';
+	renderer.domElement.style.top = '0px';
+	renderer.domElement.style.left = '0px';
+
 	document.body.appendChild(renderer.domElement);
 
 	const scene = new Scene();
-	const clock = new Clock();
-
-	let camera = new Camera();
-	scene.add(camera);
+	const camera = new Camera();
+	// camera.position.set(3, 3, 7);
+	// camera.lookAt(new Vector3(0, 1, 0));
 
 	const markerGroup = new Group();
 	scene.add(markerGroup);
 
-	// Traker
-	const source = new Source({renderer, camera});
-	let controller;
-
-	try {
-		controller = await initialize({source});
-
-		const patternMarker = new PatternMarker({
-			patternUrl: 'patterns/hiro.patt',
-			markerObject: markerGroup,
-		});
-
-		controller.trackMarker(patternMarker);
-
-	} catch (error) {
-		console.error(error);
-
-		camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-		camera.position.set(4, 3, 4);
-	}
+	const controls = new OrbitControls(camera, renderer.domElement);
+	controls.maxPolarAngle = TMath.degToRad(78);
+	controls.minPolarAngle = TMath.degToRad(45);
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.05;
 
 	const transformControls = new TransformControls(camera, renderer.domElement);
+	transformControls.addEventListener('dragging-changed', e => controls.enabled = !e.value);
 	transformControls.mode = 'rotate';
 	transformControls.showX = false;
 	transformControls.showZ = false;
 	transformControls.size = 1;
 	markerGroup.add(transformControls);
 
-	let controls;
-	if (controller) {
-		// noop
-	} else {
-		controls = new OrbitControls(camera, renderer.domElement);
-		controls.maxPolarAngle = TMath.degToRad(78);
-		controls.minPolarAngle = TMath.degToRad(45);
-		controls.enableDamping = true;
-		controls.dampingFactor = 0.05;
-		controls.target.y = 0.5;
-		controls.enablePan = false;
-
-		transformControls.addEventListener('dragging-changed', e => controls.enabled = !e.value);
-	}
-
-	// lights
 	{
 		const color = new Color('#ffffff');
 		const light = new AmbientLight(color, 0.4);
@@ -120,18 +72,14 @@ async function init() {
 	{
 		const color = new Color('#ffffff');
 		const light = new DirectionalLight(color, 0.4);
-		light.position.set(-30, 30, -20);
+		light.position.set(-30, 50, -20);
 		light.castShadow = true;
-
-		const size = controller ? 20 : 5;
-		light.shadow.camera = new OrthographicCamera(-size, size, size, -size, 0.5, 200);
-
+		light.shadow = new DirectionalLightShadow(new PerspectiveCamera(70, 1, 1, 20));
 		light.shadow.bias = -0.000222;
-		light.shadow.mapSize.width = 2048;
-		light.shadow.mapSize.height = 2048;
+		light.shadow.mapSize.width = 1024;
+		light.shadow.mapSize.height = 1024;
 		markerGroup.add(light);
 
-		// moving light
 		const tweenFish = () => {
 			TweenLite.to(light.position,  1 + Math.random() * 2, {
 				x: -30 + Math.random() * 60,
@@ -152,15 +100,12 @@ async function init() {
 		markerGroup.add(light);
 	}
 
-	// Shadow plane
 	{
-		const geometry = new PlaneGeometry(10, 10, 1, 1);
+		const geometry = new PlaneBufferGeometry(200, 200, 1, 1);
 		geometry.rotateX(-Math.PI * 0.5);
 		const material = new ShadowMaterial({opacity: 0.2});
 		const mesh = new Mesh(geometry, material);
 		mesh.receiveShadow = true;
-		mesh.depthWrite = false;
-		mesh.position.y = 0.1;
 		markerGroup.add(mesh);
 	}
 
@@ -169,10 +114,10 @@ async function init() {
 
 		let selectedIndex = 1;
 		const list = [
+			'Suzanne.glb',
 			'SuzannePisincipledBSDF.glb',
+			'SuzannePisincipledBSDFMultiMaterial.glb',
 			'SuzannePisincipledBSDFTextured.glb',
-			'fox_rig.glb',
-			'dildo.glb',
 		];
 
 		// models will be loaded here
@@ -206,10 +151,6 @@ async function init() {
 
 			pivot.add(...loadedScene.scene.children);
 
-			if (pivot.name === 'dildo.glb') {
-				pivot.scale.set(0.1, 0.1, 0.1);
-			}
-
 			markerGroup.add(pivot);
 			transformControls.attach(pivot);
 			selectedIndex = index;
@@ -222,18 +163,42 @@ async function init() {
 		}
 	}
 
+	const source = new Source({renderer, camera});
 
-	// Must be at the bottom
-	renderer.setAnimationLoop(animate);
-	function animate() {
-		const delta = clock.getDelta();
+	const controller = await initialize({source});
 
-		if (controller) {
-			controller.update(source.domElement);
-		} else {
-			controls.update();
-		}
+	const patternMarker = new PatternMarker({
+		patternUrl: '/patterns/hiro.patt',
+		markerObject: markerGroup
+	});
+
+	controller.trackMarker(patternMarker);
+
+
+	renderer.setAnimationLoop(render);
+
+	function render() {
+		// if (resizeRendererToDisplaySize()) {
+		// 	const canvas = renderer.domElement;
+		// 	camera.aspect = canvas.clientWidth / canvas.clientHeight;
+		// 	camera.updateProjectionMatrix();
+		// }
+
+		controls.update();
+
+		controller.update(source.domElement);
 
 		renderer.render(scene, camera);
 	}
+
+	// function resizeRendererToDisplaySize() {
+	// 	const canvas = renderer.domElement;
+	// 	const width = canvas.clientWidth;
+	// 	const height = canvas.clientHeight;
+	// 	const needResize = canvas.width !== width || canvas.height !== height;
+	// 	if (needResize) {
+	// 		renderer.setSize(width, height, false);
+	// 	}
+	// 	return needResize;
+	// }
 }

@@ -48,6 +48,8 @@ module.exports = {
 	],
 	devtool: prod ? false: 'source-map',
 	devServer: {
+		hot: false,
+		inline: false,
 		host: '0.0.0.0',
 		disableHostCheck: true
 	}
