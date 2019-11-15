@@ -11,7 +11,7 @@ module.exports = {
 		extensions: ['.mjs', '.js']
 	},
 	output: {
-		path: __dirname + '/public',
+		path: __dirname + '/docs',
 		filename: '[name].js',
 		chunkFilename: '[name].[id].js'
 	},
@@ -48,6 +48,7 @@ module.exports = {
 	],
 	devtool: prod ? false: 'source-map',
 	devServer: {
+		contentBase: 'docs',
 		hot: false,
 		inline: false,
 		host: '0.0.0.0',

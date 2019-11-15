@@ -36,7 +36,7 @@ import {GUI} from 'dat.gui';
 
 
 const GUITranslations = {
-	selectModel: 'Выберите модель: ',
+	selectModel: 'Выберите модель:  ',
 };
 
 init();
