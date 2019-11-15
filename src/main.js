@@ -34,16 +34,16 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {initialize, PatternMarker, Source} from 'threear';
 import {GUI} from 'dat.gui';
 
-
 const GUITranslations = {
 	selectModel: 'Выберите модель:  ',
 };
 
 init();
+
 async function init() {
 	// Initialization of context
 	const gui = new GUI({
-		width: 320
+		width: 320,
 	});
 
 	const renderer = new WebGLRenderer({
@@ -112,13 +112,13 @@ async function init() {
 
 	// lights
 	{
-		const color = new Color('#ffffff');
+		const color = new Color('#fff');
 		const light = new AmbientLight(color, 0.4);
 		markerGroup.add(light);
 	}
 
 	{
-		const color = new Color('#ffffff');
+		const color = new Color('#fff');
 		const light = new DirectionalLight(color, 0.4);
 		light.position.set(-30, 30, -20);
 		light.castShadow = true;
@@ -133,7 +133,7 @@ async function init() {
 
 		// moving light
 		const tweenFish = () => {
-			TweenLite.to(light.position,  1 + Math.random() * 2, {
+			TweenLite.to(light.position, 1 + Math.random() * 2, {
 				x: -30 + Math.random() * 60,
 				z: -20 + Math.random() * 40,
 				onComplete() {
@@ -146,7 +146,7 @@ async function init() {
 	}
 
 	{
-		const color = new Color('#ffffff');
+		const color = new Color('#fff');
 		const light = new DirectionalLight(color, 0.3);
 		light.position.set(0, -30, 20);
 		markerGroup.add(light);
@@ -177,7 +177,7 @@ async function init() {
 
 		// models will be loaded here
 		const settingsObject = {
-			[GUITranslations.selectModel]: list[selectedIndex]
+			[GUITranslations.selectModel]: list[selectedIndex],
 		};
 
 		gui.add(settingsObject, GUITranslations.selectModel, list).onChange(function () {
@@ -217,14 +217,14 @@ async function init() {
 
 		async function loadModel(index = selectedIndex) {
 			return new Promise((resolve, reject) => {
-				loader.load(`/models/${list[index]}`, gltf => resolve(gltf), void 0, reject);
+				loader.load(`models/${list[index]}`, gltf => resolve(gltf), void 0, reject);
 			});
 		}
 	}
 
-
 	// Must be at the bottom
 	renderer.setAnimationLoop(animate);
+
 	function animate() {
 		const delta = clock.getDelta();
 
