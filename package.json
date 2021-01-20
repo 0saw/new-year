@@ -21,7 +21,7 @@
   "dependencies": {
     "dat.gui": "^0.7.6",
     "document-ready-promise": "^3.0.1",
-    "gsap": "^2.1.3",
+    "gsap": "^3.6.0",
     "image-promise": "^6.0.2",
     "normalize.css": "^8.0.1",
     "three": "^0.109.0",
