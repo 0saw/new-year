@@ -24,7 +24,7 @@
     "gsap": "^2.1.3",
     "image-promise": "^6.0.2",
     "normalize.css": "^8.0.1",
-    "three": "^0.109.0",
+    "three": "^0.125.0",
     "threear": "^1.0.0-alpha.5"
   }
 }
